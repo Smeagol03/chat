@@ -1,12 +1,23 @@
 import React from "react";
 import { auth } from "../firebase/firebase";
-import { GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
+import {
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithRedirect,
+  signOut,
+} from "firebase/auth";
 
 const provider = new GoogleAuthProvider();
+provider.setCustomParameters({ prompt: "select_account" });
 
 const AuthButton = ({ user }) => {
   const handleSignIn = async () => {
-    await signInWithPopup(auth, provider);
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (err) {
+      // Fallback untuk environment yang memblokir popup/cookies (mis. iOS Safari/production hosting)
+      await signInWithRedirect(auth, provider);
+    }
   };
   const handleSignOut = async () => {
     await signOut(auth);
@@ -16,13 +27,19 @@ const AuthButton = ({ user }) => {
       {user ? (
         <>
           {user.photoURL ? (
-            <img src={user.photoURL} alt="avatar" className="w-8 h-8 rounded-full" />
+            <img
+              src={user.photoURL}
+              alt="avatar"
+              className="w-8 h-8 rounded-full"
+            />
           ) : (
             <div className="w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center">
               {user.displayName?.[0]?.toUpperCase() || "U"}
             </div>
           )}
-          <span className="text-sm text-gray-700">{user.displayName || user.email}</span>
+          <span className="text-sm text-gray-700">
+            {user.displayName || user.email}
+          </span>
           <button
             onClick={handleSignOut}
             className="ml-2 px-3 py-1 rounded bg-gray-200 hover:bg-gray-300"
